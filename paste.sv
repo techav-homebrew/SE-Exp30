@@ -8,7 +8,7 @@
  * well as additional logic for interfacing with the 68882 FPU.
  *****************************************************************************/
 
-module paste {
+module paste (
     inout wire          ncpuReset,          // 68030 reset signal (tristate)
     inout wire          ncpuHalt,           // 68030 halt signal (tristate)
     input wire          ncpuDS,             // 68030 data strobe signal
@@ -25,6 +25,7 @@ module paste {
     input wire          cpuRnW,             // 68030 Read/Write signal
     input wire          ncpuBG,             // 68030 Bus Grant signal
     inout wire          ncpuBerr,           // 68030 Bus Error signal
+    inout wire          ncpuCiin,           // 68030 Cache Enable In signal
     input wire          npdsReset,          // PDS Reset signal
     inout wire          npdsLds,            // PDS Lower Data Strobe signal
     inout wire          npdsUds,            // PDS Upper Data Strobe signal
@@ -44,7 +45,7 @@ module paste {
     output wire         nbufAEn,            // Address buffer enable
     input wire          nfpuSense,          // FPU Presence Detect signal
     output wire         nfpuCe              // FPU Chip Select signal
-};
+);
 
 // define state machine states
 parameter
@@ -79,7 +80,7 @@ always @(posedge pdsC8m or negedge npdsReset) begin
                 // marked by assertion of npdsVpa and pdsClockE
                 if (npdsVpa == 1'b0 && pdsClockE == 1'b1) begin
                     vmagenState <= S1;
-                else
+                end else begin
                     vmagenState <= S0;
                 end
                 vmagenCount <= 4'h0;
@@ -88,7 +89,7 @@ always @(posedge pdsC8m or negedge npdsReset) begin
                 // wait for deassertion of pdsClockE
                 if (pdsClockE == 1'b0) begin
                     vmagenState <= S2;
-                else
+                end else begin
                     vmagenState <= S1;
                 end
                 vmagenCount <= 4'h0;
@@ -98,7 +99,7 @@ always @(posedge pdsC8m or negedge npdsReset) begin
                 if (vmagenCount == 4'hA) begin
                     vmagenState <= S0;
                     vmagenCount <= 4'h0;
-                else
+                end else begin
                     vmagenState <= S2;
                     vmagenCount <= vmagenCount + 1'b1;
                 end
@@ -123,7 +124,7 @@ always @(posedge cpuClock or negedge npdsReset) begin
                 // wait for vmagenCount == 4'hA
                 if (vmagenCount == 4'hA) begin
                     dsack68genState <= S1;
-                else
+                end else begin
                     dsack68genState <= S0;
                 end
             end
@@ -135,7 +136,7 @@ always @(posedge cpuClock or negedge npdsReset) begin
                 // wait for vmagenCount to reset to 0
                 if (vmagenCount == 4'h0) begin
                     dsack68genState <= S0;
-                else
+                end else begin
                     dsack68genState <= S2;
                 end
             end
@@ -158,7 +159,7 @@ always @(posedge cpuClock or negedge npdsReset) begin
                 // wait for assertion of npdsDtack
                 if(npdsDtack == 1'b0) begin
                     dsackSEgenState <= S1;
-                else
+                end else begin
                     dsackSEgenState <= S0;
                 end
             end
@@ -170,7 +171,7 @@ always @(posedge cpuClock or negedge npdsReset) begin
                 // wait for deassertion of npdsDtack
                 if (npdsDtack == 1'b1) begin
                     dsackSEgenState <= S0;
-                else
+                end else begin
                     dsackSEgenState <= S2;
                 end
             end
@@ -183,7 +184,7 @@ always @(posedge cpuClock or negedge npdsReset) begin
 end
 
 // state machine for power on reset
-alwasy @(posedge cpuClock or negedge npdsReset) begin
+always @(posedge cpuClock or negedge npdsReset) begin
     // sync state machine clocked by primary CPU clock with async reset
     if(npdsReset == 1'b0) begin
         resetgenState <= S0;
@@ -193,7 +194,7 @@ alwasy @(posedge cpuClock or negedge npdsReset) begin
                 // wait for deassertion of npdsReset
                 if(npdsReset == 1'b1) begin
                     resetgenState <= S1;
-                else
+                end else begin
                     // shouldn't actually end up here
                     resetgenState <= S0;
                 end
@@ -202,7 +203,7 @@ alwasy @(posedge cpuClock or negedge npdsReset) begin
                 // wait for Bus Grant from SE
                 if(npdsBg == 1'b0) begin
                     resetgenState <= S2;
-                else
+                end else begin
                     resetgenState <= S1;
                 end
             end
@@ -211,7 +212,7 @@ alwasy @(posedge cpuClock or negedge npdsReset) begin
                 // stay here until the system resets again.
                 if(npdsReset == 1'b1) begin
                     resetgenState <= S2;
-                else
+                end else begin
                     resetgenState <= S0;
                 end
             end
@@ -228,36 +229,36 @@ always_comb begin
     // DSACK intermediary signals
     if(dsack68genState == S1) begin
         nDsack68 <= 1'b0;
-    else
+    end else begin
         nDsack68 <= 1'b1;
     end
     if(dsackSEgenState == S1) begin
         nDsackSE <= 1'b0;
-    else
+    end else begin
         nDsackSE <= 1'b1;
     end
 
     // Upper/Lower data byte intermediary signals
     if(~cpuA0 || cpuRnW) begin
         nUD <= 1'b0;
-    else
+    end else begin
         nUD <= 1'b1;
     end
     if(cpuA0 || ~cpuSize0 || cpuSize1 || cpuRnW) begin
         nLD <= 1'b0;
-    else
+    end else begin
         nLD <= 1'b1;
     end
 
     // Upper/Lower data strobes
     if(~ncpuDS || ~nUD) begin
         npdsUds <= 1'b0;
-    else
+    end else begin
         npdsUds <= 1'bZ;
     end
     if(~ncpuDS || ~nLD) begin
         npdsLds <= 1'b0;
-    else
+    end else begin
         npdsLds <= 1'bZ;
     end
 
@@ -265,27 +266,27 @@ always_comb begin
     if(ncpuBG == 1'b1) begin
         if(~nUD || ~npdsBg) begin
             nbufDhiEn <= 1'b0;
-        else
+        end else begin
             nbufDhiEn <= 1'b1;
         end
         if(~nLD || nUD || ~npdsBg) begin
             nbufDlo2En <= 1'b0;
-        else
+        end else begin
             nbufDlo2En <= 1'b1;
         end
         if(~nLD || ~nUD || ~npdsBg) begin
             nbufDlo1En <= 1'b0;
-        else
+        end else begin
             nbufDlo1En <= 1'b1;
         end
         if(npdsBg <= 1'b0) begin
             nbufAEn <= 1'b0;
             nbufCEn <= 1'b0;
-        else
+        end else begin
             nbufAEn <= 1'b1;
             nbufCEn <= 1'b1;
         end
-    else
+    end else begin
         nbufDhiEn <= 1'b1;
         nbufDlo2En <= 1'b1;
         nbufDlo1En <= 1'b1;
@@ -299,26 +300,26 @@ always_comb begin
     // autovector request
     if(cpuFC == 3'h7 && nDsack68 == 1'b0) begin
         ncpuAvec <= 1'b0;
-    else 
+    end else begin 
         ncpuAvec <= 1'b1;
     end
 
     // VMA signal
     if(vmagenCount >= 4'h3) begin
         npdsVma <= 1'b0;
-    else
+    end else begin
         npdsVma <= 1'bz;
     end
 
     // DS Ack signals
     if((nDsack68 == 1'b0 || (nDsackSE == 1'b0 && cpuAddrHi < 4'h5)) && cpuFC < 3'h7) begin
         ncpuDsack0 <= 1'b0;
-    else
-        ncpuDsack1 <= 1'b1;
+    end else begin
+        ncpuDsack0 <= 1'b1;
     end
     if(nDsackSE == 1'b0 && cpuAddrHi >= 4'h5 && cpuFC < 3'h7) begin
         ncpuDsack1 <= 1'b0;
-    else
+    end else begin
         ncpuDsack1 <= 1'b1;
     end
 
@@ -326,7 +327,7 @@ always_comb begin
     if(resetgenState == S2) begin
         ncpuReset <= 1'b0;
         ncpuHalt <= 1'b0;
-    else
+    end else begin
         ncpuReset <= 1'bz;
         ncpuHalt <= 1'bz;
     end
@@ -334,12 +335,12 @@ always_comb begin
     // bus request & grant
     if(resetgenState == S0) begin
         npdsBr <= 1'bz;
-    else
-        npdsbr <= 1'b0;
+    end else begin
+        npdsBr <= 1'b0;
     end
     if(resetgenState == S2) begin
         npdsBGack <= 1'b0;
-    else
+    end else begin
         npdsBGack <= 1'bz;
     end
 
@@ -349,11 +350,19 @@ always_comb begin
         if(nfpuSense == 1'b1) begin
             // pulled high means FPU missing. assert bus error
             ncpuBerr <= 1'b0;
-        else
+        end else begin
             ncpuBerr <= 1'bz;
         end
-    else
+    end else begin
         nfpuCe <= 1'b1;
         ncpuBerr <= 1'bz;
     end
+
+    //ncpuCiin
+    if(cpuAddrHi < 4'h6) begin
+        ncpuCiin <= 1'b0;
+    end else begin
+        ncpuCiin <= 1'bz;
+    end
 end
+endmodule
