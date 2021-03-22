@@ -25,7 +25,7 @@ module paste (
     input wire          cpuRnW,             // 68030 Read/Write signal
     input wire          ncpuBG,             // 68030 Bus Grant signal
     inout wire          ncpuBerr,           // 68030 Bus Error signal
-    inout wire          ncpuCiin,           // 68030 Cache Enable In signal
+    inout wire          ncpuCiin,           // 68030 Cache Inhibit signal
     input wire          npdsReset,          // PDS Reset signal
     inout wire          npdsLds,            // PDS Lower Data Strobe signal
     inout wire          npdsUds,            // PDS Upper Data Strobe signal
@@ -358,8 +358,8 @@ always_comb begin
         ncpuBerr <= 1'bz;
     end
 
-    //ncpuCiin
-    if(cpuAddrHi < 4'h6) begin
+    // CPU cache inhibit
+    if(cpuAddrHi >= 4'h6) begin
         ncpuCiin <= 1'b0;
     end else begin
         ncpuCiin <= 1'bz;
