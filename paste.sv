@@ -1,5 +1,5 @@
 /******************************************************************************
- * MacSE Accelerator
+ * SE-Exp30 MacSE Accelerator
  * techav
  * 2021-03-20
  * Processor Accelerator System Translation Engine

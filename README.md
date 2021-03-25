@@ -1,4 +1,4 @@
-# MacSE30
+# SE-Exp30 Mac SE Accelerator
 Minimal 68030 &amp; 68882 accelerator card for the Macintosh SE
 
 This project is not intended to be the fastest or most feature-rich accelerator for the Mac SE. Its primary goal is to be simple and transparent to Mac OS. Without the FPU, it should be able to function as just a faster Mac SE. To make full use of the FPU and the 68030's onboard cache, MacOS may need an init or extension to enable these features and advertise their presence to applications. 
@@ -7,7 +7,7 @@ The glue logic is entirely contained in a single 64-macrocel CPLD. Either an Alt
 
 Should the initial design prove successful, future revisions may add cache or RAM on a 32-bit bus to further accelerate the SE. 
 
-# Bill of Materials
+## Bill of Materials
 Parts count is minimal
 - Motorola 68030 CPU (MC68030RC or MC68030RP)
 - Motorola 68882 FPU (MC68882RC)
@@ -24,5 +24,5 @@ None of the part values are especially critical. The oscillator frequency should
 
 All capacitors on the BOM are included for bypass/filter purposes, so their values are not critical. Lower capacitance isn't recommended, but higher values may certainly be substituted. Similarly, the resistors only serve as pull-ups so their values are also not critical. 
 
-# Power Supply
+## Power Supply
 The Mac SE is rated to provide 7.5W on the 5V rail for PDS cards. This card may exceed that 7.5W rating. Depending on the configuration of the SE model (e.g. presence of a hard drive) and the health of the power supply, a separate 5V power supply may be necessary to power this accelerator. A footprint is provided for a 4-pin floppy (Berg) connector. If an external power supply is used, the jumpers J1, J2, J3 should be left open. If the card will be powered via the PDS slot, these jumpers should be closed, and nothing should be connected to the power connector. 
