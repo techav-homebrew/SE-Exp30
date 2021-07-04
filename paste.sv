@@ -13,8 +13,8 @@ module paste (
     inout wire          ncpuHalt,           // 68030 halt signal (tristate)
     input wire          ncpuDS,             // 68030 data strobe signal
     input wire          ncpuAS,             // 68030 address strobe signal
-    output wire         ncpuDsack0,         // 68030 DS Ack 0 signal
-    output wire         ncpuDsack1,         // 68030 DS Ack 1 signal
+    inout wire          ncpuDsack0,         // 68030 DS Ack 0 signal
+    inout wire          ncpuDsack1,         // 68030 DS Ack 1 signal
     input wire          cpuSize0,           // 68030 Size 0 signal
     input wire          cpuSize1,           // 68030 Size 1 signal
     input wire          cpuA0,              // 68030 Address 0 signal
@@ -51,142 +51,111 @@ module paste (
 
 // define state machine states
 parameter
-    S0  =   2'h0,
-    S1  =   2'h1,
-    S2  =   2'h2;
+    S0  =   0,
+    S1  =   1,
+    S2  =   2,
+    S3  =   3,
+    S4  =   4,
+    S5  =   5,
+    S6  =   6,
+    S7  =   7,
+    S8  =   8;
 
-// state machine state variables
-logic [1:0] vmagenState;        // state machine for npdsVma generator
-logic [1:0] dsack68genState;    // state machine for nDsack68 generator
-logic [1:0] dsackSEgenState;    // state machine for nDsackSE generator
+logic [3:0] busState;           // state machine for 68000 bus
+logic [1:0] termState;          // state machine for 68030 bus termination
 logic [1:0] resetgenState;      // state machine for nCpuReset generator
 
-logic [3:0] vmagenCount;        // state counter for npdsVma generator
+wire nUD, nLD;                  // intermediate data strobe signals
 
-// intermediate signals
-wire nDsack68;                  // 6800 bus termination signal
-wire nDsackSE;                  // SE bus termination signal
-wire nUD;                       // SE upper data byte select
-wire nLD;                       // SE lower data byte select
-reg  nAS;                       // SE address strobe
-
-// D-latch to synchronize nAS to 8MHz clock
+// 68000 bus state machine
+// synchronous to 8MHz 68000 clock
 always @(posedge pdsC8m or negedge npdsReset) begin
-    if(npdsReset == 0) nAS <= 1;
-    else nAS <= ncpuAS;
-end
-
-// state machine for npdsVma generation
-always @(posedge pdsC8m or negedge npdsReset) begin
-    // sync state machine clocked by 8MHz system clock with async reset
-    if(npdsReset == 1'b0) begin
-        vmagenState <= S0;
-        vmagenCount <= 4'h0;
-    end else begin
-        case(vmagenState)
+    if(npdsReset == 0) busState <= S0;
+    else begin
+        case(busState) 
             S0 : begin
-                // wait for 6800 bus cycle to begin
-                // marked by assertion of npdsVpa and pdsClockE
-                if (npdsVpa == 1'b0 && pdsClockE == 1'b1) begin
-                    vmagenState <= S1;
-                end else begin
-                    vmagenState <= S0;
-                end
-                vmagenCount <= 4'h0;
+                // idle state, wait for cpu to begin bus cycle
+                if(ncpuAS == 0) busState <= S1;
+                else busState <= S0;
             end
             S1 : begin
-                // wait for deassertion of pdsClockE
-                if (pdsClockE == 1'b0) begin
-                    vmagenState <= S2;
-                end else begin
-                    vmagenState <= S1;
-                end
-                vmagenCount <= 4'h0;
+                // 68000 bus cycle state 2/3
+                // progress immediately
+                busState <= S2;
             end
             S2 : begin
-                // increment vmagenCount until == 4'hA
-                if (vmagenCount == 4'hA) begin
-                    vmagenState <= S0;
-                    vmagenCount <= 4'h0;
-                end else begin
-                    vmagenState <= S2;
-                    vmagenCount <= vmagenCount + 1'b1;
-                end
+                // 68000 bus cycle state 4/5
+                // wait for PDS DTACK or PDS VPA
+                if(npdsDtack == 0) busState <= S3;
+                else if(npdsVpa == 0) busState <= S4;
+                else busState <= S2;
+            end
+            S3 : begin
+                // 68000 bus cycle state 6/7
+                // end 68000 bus cycle
+                // progress immediately
+                busState <= S0;
+            end
+            S4 : begin
+                // 6800 bus cycle state 1
+                // wait for E clock = 0
+                if(pdsClockE == 0) busState <= S5;
+                else busState <= S4;
+            end
+            S5 : begin
+                // 6800 bus cycle state 2
+                // wait for E clock = 1
+                if(pdsClockE == 1) busState <= S6;
+                else busState <= S5;
+            end
+            S6 : begin
+                // 6800 bus cycle state 3
+                // progress immediately
+                busState <= S7;
+            end
+            S7 : begin
+                // 6800 bus cycle state 4
+                // progress immediately
+                busState <= S8;
+            end
+            S8 : begin
+                // 6800 bus cycle state 5
+                // progress immediately
+                busState <= S0;
             end
             default: begin
-                // how did we end up here? reset to S0
-                vmagenState <= S0;
-                vmagenCount <= 4'h0;
+                // how did we end up here?
+                busState <= S0;
             end
         endcase
     end
 end
 
-// state machine for nDsack68 generation
+// 68030 bus termination state machine
+// synchronous to CPU clock
 always @(posedge cpuClock or negedge npdsReset) begin
-    // sync state machine clocked by primary CPU clock with async reset
-    if(npdsReset == 1'b0) begin
-        dsack68genState <= S0;
-    end else begin
-        case(dsack68genState)
+    if(npdsReset == 0) termState <= S0;
+    else begin
+        case(termState)
             S0 : begin
-                // wait for vmagenCount == 4'hA
-                if (vmagenCount == 4'hA) begin
-                    dsack68genState <= S1;
-                end else begin
-                    dsack68genState <= S0;
-                end
+                // idle, wait for busState
+                if(busState == S3 && pdsC8m == 1) termState <= S1;
+                else if(busState == S8 && pdsC8m == 1) termState <= S1;
+                else termState <= S0;
             end
             S1 : begin
-                // immediately progress to S2
-                dsack68genState <= S2;
+                // assert 68030 bus termination
+                // progress immediately
+                termState <= S2;
             end
             S2 : begin
-                // wait for vmagenCount to reset to 0
-                if (vmagenCount == 4'h0) begin
-                    dsack68genState <= S0;
-                end else begin
-                    dsack68genState <= S2;
-                end
+                // wait for busState
+                if(busState == S0) termState <= S0;
+                else termState <= S2;
             end
             default: begin
-                // shouldn't be here. reset to S0
-                dsack68genState <= S0;
-            end
-        endcase
-    end
-end
-
-// state machine for nDsackSE generation
-always @(posedge cpuClock or negedge npdsReset) begin
-    // sync state machine clocked by primary CPU clock with async reset
-    if(npdsReset == 1'b0) begin
-        dsackSEgenState <= S0;
-    end else begin
-        case(dsackSEgenState)
-            S0 : begin
-                // wait for assertion of npdsDtack
-                if(npdsDtack == 1'b0) begin
-                    dsackSEgenState <= S1;
-                end else begin
-                    dsackSEgenState <= S0;
-                end
-            end
-            S1 : begin
-                // immediately proceed to S3
-                dsackSEgenState <= S2;
-            end
-            S2 : begin
-                // wait for deassertion of npdsDtack
-                if (npdsDtack == 1'b1) begin
-                    dsackSEgenState <= S0;
-                end else begin
-                    dsackSEgenState <= S2;
-                end
-            end
-            default: begin
-                // shouldn't be here. reset to S0
-                dsackSEgenState <= S0;
+                // how did we end up here?
+                termState <= S0;
             end
         endcase
     end
@@ -233,39 +202,30 @@ always @(posedge cpuClock or negedge npdsReset) begin
     end
 end
 
-// and finally, our combinatorial logic
+// combinatorial logic
 assign nUD = ~(~cpuA0 || cpuRnW);
 assign nLD = ~(cpuA0 || ~cpuSize0 || cpuSize1 || cpuRnW);
 
 always_comb begin
-    // DSACK intermediary signals
-    if(dsack68genState == S1) begin
-        nDsack68 <= 1'b0;
+    // CPU reset signals
+    if(resetgenState != S2) begin
+        ncpuReset <= 1'b0;
+        ncpuHalt <= 1'b0;
     end else begin
-        nDsack68 <= 1'b1;
-    end
-    if(dsackSEgenState == S1) begin
-        nDsackSE <= 1'b0;
-    end else begin
-        nDsackSE <= 1'b1;
+        ncpuReset <= 1'bz;
+        ncpuHalt <= 1'bz;
     end
 
-    // Upper/Lower data strobes
-    if(npdsBg == 1) begin
-        npdsUds <= 1'bZ;
-        npdsLds <= 1'bZ;
+    // bus request & grant
+    if(resetgenState == S0) begin
+        npdsBr <= 1'bz;
     end else begin
-        if(ncpuDS == 0 && nUD == 0) npdsUds <= 0;
-        else npdsUds <= 1;
-        if(ncpuDS == 0 && nLD == 0) npdsLds <= 0;
-        else npdsLds <= 1;
+        npdsBr <= 1'b0;
     end
-
-    // Address strobe
-    if(npdsBg == 1) begin
-        npdsAs <= 1'bZ;
+    if(resetgenState == S2) begin
+        npdsBGack <= 1'b0;
     end else begin
-        npdsAs <= nAS;
+        npdsBGack <= 1'bz;
     end
 
     // buffer enable signals
@@ -299,69 +259,91 @@ always_comb begin
         nbufAEn <= 1'b1;
         nbufCEn <= 1'b1;
     end
-    
+
     // data buffer direction
     bufDDir <= cpuRnW;
 
-    // autovector request
-    if(cpuFC == 3'h7 && nDsack68 == 1'b0) begin
-        ncpuAvec <= 1'b0;
-    end else begin 
-        ncpuAvec <= 1'b1;
+    // CPU cache inhibit
+    if(cpuAddrHi >= 4'h6) begin
+        ncpuCiin <= 1'b0;
+    end else begin
+        ncpuCiin <= 1'bz;
     end
 
-    // VMA signal
-    if(vmagenCount >= 4'h3) begin
-        npdsVma <= 1'b0;
+    // Upper/Lower data strobes
+    if(npdsBg == 1) begin
+        npdsUds <= 1'bZ;
+        npdsLds <= 1'bZ;
     end else begin
-        npdsVma <= 1'bz;
+        if(cpuRnW == 1 && busState == S1) begin
+            npdsUds <= nUD;
+            npdsLds <= nLD;
+        end else if (busState == S2 || busState == S3 ||
+                     busState == S4 || busState == S5 ||
+                     busState == S6 || busState == S7 ||
+                     busState == S8) begin
+            npdsUds <= nUD;
+            npdsLds <= nLD;
+        end else begin
+            npdsUds <= 1;
+            npdsLds <= 1;
+        end
     end
 
-    // DS Ack signals
-    //      8-bit: ncpuDsack1=1, ncpuDsack0=0
-    //     16-bit: ncpuDsack1=0, ncpuDsack0=1
-    //  nDsack68 is always an 8-bit transfer
-    //  nDsackSE is a 16-bit transfer below address $50,0000
-    //  nDsackSE is an 8-bit transfer above address $50,0000, inclusive
-    if(
-        (
-            nDsack68 == 0 || 
-            (nDsackSE == 0 && cpuAddrHi >= 4'h5)
-        )
-        && cpuFC < 3'h7 ) begin
-        ncpuDsack0 <= 0;
-    end else begin
-        ncpuDsack0 <= 1;
-    end
-    if(nDsackSE == 0 && cpuAddrHi < 4'h5 && cpuFC < 3'h7) begin
-        ncpuDsack1 <= 0;
-    end else begin
-        ncpuDsack1 <= 1;
+    // Address strobe
+    if(npdsBg == 1) npdsAs <= 1'bZ;
+    else begin
+        if(busState != S0) npdsAs <= 0;
+        else npdsAs <= 1;
     end
 
-    // CPU reset signals
-    if(resetgenState != S2) begin
-        ncpuReset <= 1'b0;
-        ncpuHalt <= 1'b0;
-    end else begin
-        ncpuReset <= 1'bz;
-        ncpuHalt <= 1'bz;
+    // 6800 bus VMA signal
+    if(npdsBg == 1) npdsVma <= 1'bZ;
+    else begin
+        if(busState == S5 || busState == S6 || 
+            busState == S7 || busState == S8) begin
+                npdsVma <= 0;
+        end else npdsVma <= 1;
     end
 
-    // bus request & grant
-    if(resetgenState == S0) begin
-        npdsBr <= 1'bz;
+    // 68030 bus termination signals
+    // FPU will terminate on its own
+    if(termState == S1) begin
+        if(cpuAddrHi < 4'h5 && cpuFC < 3'h7) begin
+            // RAM/ROM access - 16-bit
+            ncpuDsack0 <= 1'bZ;
+            ncpuDsack1 <= 0;
+            ncpuAvec <= 1'bZ;
+            ncpuBerr <= 1'bZ;
+        end else if(cpuAddrHi >= 4'h5 && cpuFC < 3'h7) begin
+            // peripheral access - 8-bit
+            ncpuDsack0 <= 0;
+            ncpuDsack1 <= 1'bZ;
+            ncpuAvec <= 1'bZ;
+            ncpuBerr <= 1'bZ;
+        end else if(cpuFC == 3'h7) begin
+            // autovector interrupt
+            ncpuAvec <= 0;
+            ncpuDsack0 <= 1'bZ;
+            ncpuDsack1 <= 1'bZ;
+            ncpuBerr <= 1'bZ;
+        end else begin
+            // this is an odd case. how did it happen?
+            // may as well throw an error
+            ncpuBerr <= 0;
+            ncpuDsack0 <= 1'bZ;
+            ncpuDsack1 <= 1'bZ;
+            ncpuAvec <= 1'bZ;
+        end
     end else begin
-        npdsBr <= 1'b0;
-    end
-    if(resetgenState == S2) begin
-        npdsBGack <= 1'b0;
-    end else begin
-        npdsBGack <= 1'bz;
+        ncpuBerr <= 1'bZ;
+        ncpuDsack0 <= 1'bZ;
+        ncpuDsack1 <= 1'bZ;
+        ncpuAvec <= 1'bZ;
     end
 
     // FPU chip enable & presence detect
-    if(cpuAddrMid == 7'h11 && cpuFC == 3'h7) begin
+    if(cpuAddrMid == 7'h11 && cpuFC == 3'h7 && ncpuAS) begin
         nfpuCe <= 1'b0;
         if(nfpuSense == 1'b1) begin
             // pulled high means FPU missing. assert bus error
@@ -373,12 +355,6 @@ always_comb begin
         nfpuCe <= 1'b1;
         ncpuBerr <= 1'bz;
     end
-
-    // CPU cache inhibit
-    if(cpuAddrHi >= 4'h6) begin
-        ncpuCiin <= 1'b0;
-    end else begin
-        ncpuCiin <= 1'bz;
-    end
 end
+
 endmodule
