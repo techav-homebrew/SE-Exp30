@@ -12,6 +12,7 @@ module paste (
     inout wire          ncpuReset,          // 68030 reset signal (tristate)
     inout wire          ncpuHalt,           // 68030 halt signal (tristate)
     input wire          ncpuDS,             // 68030 data strobe signal
+    input wire          ncpuAS,             // 68030 address strobe signal
     output wire         ncpuDsack0,         // 68030 DS Ack 0 signal
     output wire         ncpuDsack1,         // 68030 DS Ack 1 signal
     input wire          cpuSize0,           // 68030 Size 0 signal
@@ -29,6 +30,7 @@ module paste (
     input wire          npdsReset,          // PDS Reset signal
     inout wire          npdsLds,            // PDS Lower Data Strobe signal
     inout wire          npdsUds,            // PDS Upper Data Strobe signal
+    inout wire          npdsAs,             // PDS Address Strobe signal
     input wire          npdsDtack,          // PDS Data Xfer Ack signal
     input wire          npdsBg,             // PDS Bus Grant signal
     output wire         npdsBGack,          // PDS Bus Grant Ack signal
@@ -66,6 +68,13 @@ wire nDsack68;                  // 6800 bus termination signal
 wire nDsackSE;                  // SE bus termination signal
 wire nUD;                       // SE upper data byte select
 wire nLD;                       // SE lower data byte select
+reg  nAS;                       // SE address strobe
+
+// D-latch to synchronize nAS to 8MHz clock
+always @(posedge pdsC8m or negedge npdsReset) begin
+    if(npdsReset == 0) nAS <= 1;
+    else nAS <= ncpuAS;
+end
 
 // state machine for npdsVma generation
 always @(posedge pdsC8m or negedge npdsReset) begin
@@ -225,6 +234,9 @@ always @(posedge cpuClock or negedge npdsReset) begin
 end
 
 // and finally, our combinatorial logic
+assign nUD = ~(~cpuA0 || cpuRnW);
+assign nLD = ~(cpuA0 || ~cpuSize0 || cpuSize1 || cpuRnW);
+
 always_comb begin
     // DSACK intermediary signals
     if(dsack68genState == S1) begin
@@ -238,43 +250,37 @@ always_comb begin
         nDsackSE <= 1'b1;
     end
 
-    // Upper/Lower data byte intermediary signals
-    if(~cpuA0 || cpuRnW) begin
-        nUD <= 1'b0;
+    // Upper/Lower data strobes
+    if(npdsBg == 1) begin
+        npdsUds <= 1'bZ;
+        npdsLds <= 1'bZ;
     end else begin
-        nUD <= 1'b1;
-    end
-    if(cpuA0 || ~cpuSize0 || cpuSize1 || cpuRnW) begin
-        nLD <= 1'b0;
-    end else begin
-        nLD <= 1'b1;
+        if(ncpuDS == 0 && nUD == 0) npdsUds <= 0;
+        else npdsUds <= 1;
+        if(ncpuDS == 0 && nLD == 0) npdsLds <= 0;
+        else npdsLds <= 1;
     end
 
-    // Upper/Lower data strobes
-    if(~ncpuDS || ~nUD) begin
-        npdsUds <= 1'b0;
+    // Address strobe
+    if(npdsBg == 1) begin
+        npdsAs <= 1'bZ;
     end else begin
-        npdsUds <= 1'bZ;
-    end
-    if(~ncpuDS || ~nLD) begin
-        npdsLds <= 1'b0;
-    end else begin
-        npdsLds <= 1'bZ;
+        npdsAs <= nAS;
     end
 
     // buffer enable signals
     if(ncpuBG == 1'b1) begin
-        if(~nUD || ~npdsBg) begin
+        if(nUD == 0 && npdsBg == 0) begin
             nbufDhiEn <= 1'b0;
         end else begin
             nbufDhiEn <= 1'b1;
         end
-        if(~nLD || nUD || ~npdsBg) begin
+        if(nLD == 0 && nUD == 1 && npdsBg == 0) begin
             nbufDlo2En <= 1'b0;
         end else begin
             nbufDlo2En <= 1'b1;
         end
-        if(~nLD || ~nUD || ~npdsBg) begin
+        if(nLD == 0 && nUD == 0 && npdsBg == 0) begin
             nbufDlo1En <= 1'b0;
         end else begin
             nbufDlo1En <= 1'b1;
@@ -312,19 +318,29 @@ always_comb begin
     end
 
     // DS Ack signals
-    if((nDsack68 == 1'b0 || (nDsackSE == 1'b0 && cpuAddrHi < 4'h5)) && cpuFC < 3'h7) begin
-        ncpuDsack0 <= 1'b0;
+    //      8-bit: ncpuDsack1=1, ncpuDsack0=0
+    //     16-bit: ncpuDsack1=0, ncpuDsack0=1
+    //  nDsack68 is always an 8-bit transfer
+    //  nDsackSE is a 16-bit transfer below address $50,0000
+    //  nDsackSE is an 8-bit transfer above address $50,0000, inclusive
+    if(
+        (
+            nDsack68 == 0 || 
+            (nDsackSE == 0 && cpuAddrHi >= 4'h5)
+        )
+        && cpuFC < 3'h7 ) begin
+        ncpuDsack0 <= 0;
     end else begin
-        ncpuDsack0 <= 1'b1;
+        ncpuDsack0 <= 1;
     end
-    if(nDsackSE == 1'b0 && cpuAddrHi >= 4'h5 && cpuFC < 3'h7) begin
-        ncpuDsack1 <= 1'b0;
+    if(nDsackSE == 0 && cpuAddrHi < 4'h5 && cpuFC < 3'h7) begin
+        ncpuDsack1 <= 0;
     end else begin
-        ncpuDsack1 <= 1'b1;
+        ncpuDsack1 <= 1;
     end
 
     // CPU reset signals
-    if(resetgenState == S2) begin
+    if(resetgenState != S2) begin
         ncpuReset <= 1'b0;
         ncpuHalt <= 1'b0;
     end else begin

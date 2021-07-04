@@ -1,0 +1,1472 @@
+/*
+WARNING: Do NOT edit the input and output ports in this file in a text
+editor if you plan to continue editing the block that represents it in
+the Block Editor! File corruption is VERY likely to occur.
+*/
+
+/*
+Copyright (C) 1991-2013 Altera Corporation
+Your use of Altera Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, Altera MegaCore Function License 
+Agreement, or other applicable license agreement, including, 
+without limitation, that your use is for the sole purpose of 
+programming logic devices manufactured by Altera and sold by 
+Altera or its authorized distributors.  Please refer to the 
+applicable agreement for further details.
+*/
+
+HEADER
+{
+	VERSION = 1;
+	TIME_UNIT = ns;
+	DATA_OFFSET = 0.0;
+	DATA_DURATION = 10000.0;
+	SIMULATION_TIME = 0.0;
+	GRID_PHASE = 0.0;
+	GRID_PERIOD = 10.0;
+	GRID_DUTY_CYCLE = 50;
+}
+
+SIGNAL("cpuFC")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = BUS;
+	WIDTH = 3;
+	LSB_INDEX = 0;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuFC[2]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "cpuFC";
+}
+
+SIGNAL("cpuFC[1]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "cpuFC";
+}
+
+SIGNAL("cpuFC[0]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "cpuFC";
+}
+
+SIGNAL("bufDDir")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuA0")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrHi[20]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrHi[21]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrHi[22]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrHi[23]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[13]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[14]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[15]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[16]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[17]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[18]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuAddrMid[19]")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuClock")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuRnW")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuSize0")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("cpuSize1")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("nbufAEn")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("nbufCEn")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("nbufDhiEn")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("nbufDlo1En")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("nbufDlo2En")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuAvec")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuBG")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuBerr")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("ncpuCiin")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("ncpuDS")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuDsack0")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuDsack1")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("ncpuHalt")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("ncpuReset")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("nfpuCe")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("nfpuSense")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsBGack")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsBg")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsBr")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = OUTPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsDtack")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsLds")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("npdsReset")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("npdsUds")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("npdsVma")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = BIDIR;
+	PARENT = "";
+}
+
+SIGNAL("npdsVpa")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("pdsC8m")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+SIGNAL("pdsClockE")
+{
+	VALUE_TYPE = NINE_LEVEL_BIT;
+	SIGNAL_TYPE = SINGLE_BIT;
+	WIDTH = 1;
+	LSB_INDEX = -1;
+	DIRECTION = INPUT;
+	PARENT = "";
+}
+
+GROUP("cpuAddrHi")
+{
+	MEMBERS = "cpuAddrHi[20]", "cpuAddrHi[21]", "cpuAddrHi[22]", "cpuAddrHi[23]";
+}
+
+GROUP("cpuAddrMid")
+{
+	MEMBERS = "cpuAddrMid[13]", "cpuAddrMid[14]", "cpuAddrMid[15]", "cpuAddrMid[16]", "cpuAddrMid[17]", "cpuAddrMid[18]", "cpuAddrMid[19]";
+}
+
+GROUP("cpuSize")
+{
+	MEMBERS = "cpuSize0", "cpuSize1";
+}
+
+TRANSITION_LIST("cpuFC[2]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuFC[1]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuFC[0]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("bufDDir")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuA0")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 310.0;
+		LEVEL 1 FOR 190.0;
+		LEVEL 0 FOR 9500.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrHi[20]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrHi[21]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 700.0;
+		LEVEL 1 FOR 240.0;
+		LEVEL 0 FOR 9060.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrHi[22]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 700.0;
+		LEVEL 1 FOR 240.0;
+		LEVEL 0 FOR 9060.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrHi[23]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[13]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[14]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[15]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[16]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[17]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[18]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuAddrMid[19]")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuClock")
+{
+	NODE
+	{
+		REPEAT = 1;
+		NODE
+		{
+			REPEAT = 500;
+			LEVEL 0 FOR 10.0;
+			LEVEL 1 FOR 10.0;
+		}
+	}
+}
+
+TRANSITION_LIST("cpuRnW")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuSize0")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("cpuSize1")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nbufAEn")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nbufCEn")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nbufDhiEn")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nbufDlo1En")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nbufDlo2En")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuAvec")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuBG")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuBerr")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuCiin")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuDS")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 130.0;
+		LEVEL 0 FOR 120.0;
+		LEVEL 1 FOR 120.0;
+		LEVEL 0 FOR 130.0;
+		LEVEL 1 FOR 200.0;
+		LEVEL 0 FOR 240.0;
+		LEVEL 1 FOR 9060.0;
+	}
+}
+
+TRANSITION_LIST("ncpuDsack0")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuDsack1")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuHalt")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("ncpuReset")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nfpuCe")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("nfpuSense")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsBGack")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsBg")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 30.0;
+		LEVEL 0 FOR 9970.0;
+	}
+}
+
+TRANSITION_LIST("npdsBr")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL X FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsDtack")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 190.0;
+		LEVEL 0 FOR 60.0;
+		LEVEL 1 FOR 190.0;
+		LEVEL 0 FOR 60.0;
+		LEVEL 1 FOR 360.0;
+		LEVEL 0 FOR 80.0;
+		LEVEL 1 FOR 9060.0;
+	}
+}
+
+TRANSITION_LIST("npdsLds")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsReset")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 0 FOR 10.0;
+		LEVEL 1 FOR 9990.0;
+	}
+}
+
+TRANSITION_LIST("npdsUds")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsVma")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL Z FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("npdsVpa")
+{
+	NODE
+	{
+		REPEAT = 1;
+		LEVEL 1 FOR 10000.0;
+	}
+}
+
+TRANSITION_LIST("pdsC8m")
+{
+	NODE
+	{
+		REPEAT = 1;
+		NODE
+		{
+			REPEAT = 80;
+			LEVEL 0 FOR 62.5;
+			LEVEL 1 FOR 62.5;
+		}
+	}
+}
+
+TRANSITION_LIST("pdsClockE")
+{
+	NODE
+	{
+		REPEAT = 1;
+		NODE
+		{
+			REPEAT = 8;
+			LEVEL 0 FOR 625.0;
+			LEVEL 1 FOR 625.0;
+		}
+	}
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsReset";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 0;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuClock";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 1;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "pdsC8m";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 2;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "pdsClockE";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 3;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrHi";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 4;
+	TREE_LEVEL = 0;
+	CHILDREN = 5, 6, 7, 8;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrHi[20]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 5;
+	TREE_LEVEL = 1;
+	PARENT = 4;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrHi[21]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 6;
+	TREE_LEVEL = 1;
+	PARENT = 4;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrHi[22]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 7;
+	TREE_LEVEL = 1;
+	PARENT = 4;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrHi[23]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 8;
+	TREE_LEVEL = 1;
+	PARENT = 4;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 9;
+	TREE_LEVEL = 0;
+	CHILDREN = 10, 11, 12, 13, 14, 15, 16;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[13]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 10;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[14]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 11;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[15]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 12;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[16]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 13;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[17]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 14;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[18]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 15;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuAddrMid[19]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 16;
+	TREE_LEVEL = 1;
+	PARENT = 9;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuA0";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 17;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuSize";
+	EXPAND_STATUS = EXPANDED;
+	RADIX = Binary;
+	TREE_INDEX = 18;
+	TREE_LEVEL = 0;
+	CHILDREN = 19, 20;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuSize0";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 19;
+	TREE_LEVEL = 1;
+	PARENT = 18;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuSize1";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 20;
+	TREE_LEVEL = 1;
+	PARENT = 18;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuFC";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 21;
+	TREE_LEVEL = 0;
+	CHILDREN = 22, 23, 24;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuFC[2]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 22;
+	TREE_LEVEL = 1;
+	PARENT = 21;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuFC[1]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 23;
+	TREE_LEVEL = 1;
+	PARENT = 21;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuFC[0]";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 24;
+	TREE_LEVEL = 1;
+	PARENT = 21;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "cpuRnW";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 25;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuDS";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 26;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuAvec";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 27;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuBG";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 28;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuBerr";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 29;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuCiin";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 30;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuDsack0";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 31;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuDsack1";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 32;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsDtack";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 33;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsUds";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 34;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsLds";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 35;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsVma";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 36;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsVpa";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 37;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuHalt";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 38;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "ncpuReset";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 39;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsBGack";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 40;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsBg";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 41;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nfpuCe";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 42;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nfpuSense";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 43;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "npdsBr";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 44;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "bufDDir";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 45;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nbufDhiEn";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 46;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nbufDlo1En";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 47;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nbufDlo2En";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 48;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nbufAEn";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 49;
+	TREE_LEVEL = 0;
+}
+
+DISPLAY_LINE
+{
+	CHANNEL = "nbufCEn";
+	EXPAND_STATUS = COLLAPSED;
+	RADIX = Binary;
+	TREE_INDEX = 50;
+	TREE_LEVEL = 0;
+}
+
+TIME_BAR
+{
+	TIME = 0;
+	MASTER = TRUE;
+}
+;
