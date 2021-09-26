@@ -64,6 +64,7 @@ parameter
 logic [3:0] busState;           // state machine for 68000 bus
 logic [1:0] termState;          // state machine for 68030 bus termination
 logic [1:0] resetgenState;      // state machine for nCpuReset generator
+logic [1:0] cycleEndState;      // state machine for 68030 bus cycle end monitor
 
 wire nUD, nLD;                  // intermediate data strobe signals
 
@@ -93,8 +94,9 @@ always @(posedge pdsC8m or negedge npdsReset) begin
             S3 : begin
                 // 68000 bus cycle state 6/7
                 // end 68000 bus cycle
-                // progress immediately
-                busState <= S0;
+                // wait for cycleEndState == S2
+                if(cycleEndState == S2) busState <= S0;
+                else busState <= S3;
             end
             S4 : begin
                 // 6800 bus cycle state 1
@@ -120,8 +122,9 @@ always @(posedge pdsC8m or negedge npdsReset) begin
             end
             S8 : begin
                 // 6800 bus cycle state 5
-                // progress immediately
-                busState <= S0;
+                // wait for cycleEndState == S2
+                if(cycleEndState == S2) busState <= S0;
+                else busState <= S8;
             end
             default: begin
                 // how did we end up here?
@@ -132,6 +135,7 @@ always @(posedge pdsC8m or negedge npdsReset) begin
 end
 
 // 68030 bus termination state machine
+// drives CPU DSACKx signals
 // synchronous to CPU clock
 always @(posedge cpuClock or negedge npdsReset) begin
     if(npdsReset == 0) termState <= S0;
@@ -156,6 +160,33 @@ always @(posedge cpuClock or negedge npdsReset) begin
             default: begin
                 // how did we end up here?
                 termState <= S0;
+            end
+        endcase
+    end
+end
+
+// 68030 bus cycle end monitor
+// watches for 68030 ending a bus cycle (de-asserting AS)
+// synchronous to CPU clock
+always @(posedge cpuClock or negedge npdsReset) begin
+    if(npdsReset == 0) cycleEndState <= S0;
+    else begin
+        case(cycleEndState)
+            S0 : begin
+                if(busState != S0) cycleEndState <= S1;
+                else cycleEndState <= S0;
+            end
+            S1 : begin
+                if(ncpuAS == 1) cycleEndState <= S2;
+                else cycleEndState <= S1;
+            end
+            S2: begin
+                if(busState == S0) cycleEndState <= S0;
+                else cycleEndState <= S2;
+            end
+            default: begin
+                // how did get end up here?
+                cycleEndState <= S0;
             end
         endcase
     end
