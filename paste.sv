@@ -1,7 +1,7 @@
 /******************************************************************************
  * SE-Exp30 MacSE Accelerator
  * techav
- * 2021-03-20
+ * 2021-09-26
  * Processor Accelerator System Translation Engine
  ******************************************************************************
  * Handles all logic to translate the Mac SE 68000 PDS bus to the 68030 bus as 
@@ -9,383 +9,254 @@
  *****************************************************************************/
 
 module paste (
-    inout wire          ncpuReset,          // 68030 reset signal (tristate)
-    inout wire          ncpuHalt,           // 68030 halt signal (tristate)
-    input wire          ncpuDS,             // 68030 data strobe signal
-    input wire          ncpuAS,             // 68030 address strobe signal
-    inout wire          ncpuDsack0,         // 68030 DS Ack 0 signal
-    inout wire          ncpuDsack1,         // 68030 DS Ack 1 signal
-    input wire          cpuSize0,           // 68030 Size 0 signal
-    input wire          cpuSize1,           // 68030 Size 1 signal
+    inout wire          cpuRESETnz,         // 68030 reset signal (tristate)
+    inout wire          cpuHALTnz,          // 68030 halt signal (tristate)
+    input wire          cpuDSn,             // 68030 data strobe signal
+    input wire          cpuASn,             // 68030 address strobe signal
+    inout wire          cpuDSACK0nz,        // 68030 DS Ack 0 signal
+    inout wire          cpuDSACK1nz,        // 68030 DS Ack 1 signal
+    input wire          cpuSIZE0,           // 68030 Size 0 signal
+    input wire          cpuSIZE1,           // 68030 Size 1 signal
     input wire          cpuA0,              // 68030 Address 0 signal
-    input logic [23:20] cpuAddrHi,          // 68030 Address Hi (16MB) signals
-    input logic [19:13] cpuAddrMid,         // 68030 Address Mid (FPU decode) signals
-    output wire         ncpuAvec,           // 68030 Autovector request signal
+    input logic [3:0]   cpuAHI,             // 68030 Address Hi (16MB) signals A[23:20]
+    input logic [6:0]   cpuAMID,            // 68030 Address Mid (FPU decode) signals A[19:13]
+    output wire         cpuAVECn,           // 68030 Autovector request signal
     input logic [2:0]   cpuFC,              // 68030 Function Code signals
     input wire          cpuClock,           // 68030 Primary CPU Clock signal
     input wire          cpuRnW,             // 68030 Read/Write signal
-    input wire          ncpuBG,             // 68030 Bus Grant signal
-    inout wire          ncpuBerr,           // 68030 Bus Error signal
-    inout wire          ncpuCiin,           // 68030 Cache Inhibit signal
-    input wire          npdsReset,          // PDS Reset signal
-    inout wire          npdsLds,            // PDS Lower Data Strobe signal
-    inout wire          npdsUds,            // PDS Upper Data Strobe signal
-    inout wire          npdsAs,             // PDS Address Strobe signal
-    input wire          npdsDtack,          // PDS Data Xfer Ack signal
-    input wire          npdsBg,             // PDS Bus Grant signal
-    output wire         npdsBGack,          // PDS Bus Grant Ack signal
-    output wire         npdsBr,             // PDS Bus Request signal
-    inout wire          npdsVma,            // PDS Valid Memory Addr signal
-    input wire          npdsVpa,            // PDS Valid Peripheral Addr signal
-    input wire          pdsC8m,             // PDS 8MHz System Clock signal
-    input wire          pdsClockE,          // PDS 800kHz 6800 bus E clock
-    output wire         nbufDhiEn,          // Data buffer CPU[31:24] <=> PDS[15:8]
-    output wire         nbufDlo1En,         // Data buffer CPU[23:16] <=> PDS[7:0]
-    output wire         nbufDlo2En,         // Data buffer CPU[31:24] <=> PDS[7:0]
-    output wire         bufDDir,            // Data buffer direction
-    output wire         nbufCEn,            // Control signal buffer enable
-    output wire         nbufAEn,            // Address buffer enable
-    input wire          nfpuSense,          // FPU Presence Detect signal
-    output wire         nfpuCe              // FPU Chip Select signal
+    input wire          cpuBGn,             // 68030 Bus Grant signal
+    output wire         cpuBERRn,           // 68030 Bus Error signal
+    output wire         cpuCIINn,           // 68030 Cache Inhibit signal
+    input wire          pdsRESETn,          // PDS Reset signal
+    inout wire          pdsLDSnz,           // PDS Lower Data Strobe signal
+    inout wire          pdsUDSnz,           // PDS Upper Data Strobe signal
+    inout wire          pdsASnz,            // PDS Address Strobe signal
+    input wire          pdsDTACKn,          // PDS Data Xfer Ack signal
+    input wire          pdsBGn,             // PDS Bus Grant signal
+    output wire         pdsBGACKn,          // PDS Bus Grant Ack signal
+    output wire         pdsBRn,             // PDS Bus Request signal
+    inout wire          pdsVMAnz,           // PDS Valid Memory Addr signal
+    input wire          pdsVPAn,            // PDS Valid Peripheral Addr signal
+    input wire          pdsBERRn,           // PDS Bus Error signal
+    input wire          pdsC8M,             // PDS 8MHz System Clock signal
+    output wire         pdsClockE,          // PDS 800kHz 6800 bus E clock
+    output wire         bufDHICEn,          // Data buffer CPU[31:24] <=> PDS[15:8]
+    output wire         bufDLO1CEn,         // Data buffer CPU[23:16] <=> PDS[7:0]
+    output wire         bufDLO2CEn,         // Data buffer CPU[31:24] <=> PDS[7:0]
+    output wire         bufDDIR,            // Data buffer direction
+    output wire         bufCCEn,            // Control signal buffer enable
+    output wire         bufACEn,            // Address buffer enable
+    input wire          fpuSENSEn,          // FPU Presence Detect signal
+    output wire         fpuCEn              // FPU Chip Select signal
 );
 
-// define state machine states
-parameter
-    S0  =   0,
-    S1  =   1,
-    S2  =   2,
-    S3  =   3,
-    S4  =   4,
-    S5  =   5,
-    S6  =   6,
-    S7  =   7,
-    S8  =   8;
-
-logic [3:0] busState;           // state machine for 68000 bus
-logic [1:0] termState;          // state machine for 68030 bus termination
-logic [1:0] resetgenState;      // state machine for nCpuReset generator
-logic [1:0] cycleEndState;      // state machine for 68030 bus cycle end monitor
-
-wire nUD, nLD;                  // intermediate data strobe signals
-
-// 68000 bus state machine
-// synchronous to 8MHz 68000 clock
-always @(posedge pdsC8m or negedge npdsReset) begin
-    if(npdsReset == 0) busState <= S0;
-    else begin
-        case(busState) 
-            S0 : begin
-                // idle state, wait for cpu to begin bus cycle
-                if(ncpuAS == 0) busState <= S1;
-                else busState <= S0;
-            end
-            S1 : begin
-                // 68000 bus cycle state 2/3
-                // progress immediately
-                busState <= S2;
-            end
-            S2 : begin
-                // 68000 bus cycle state 4/5
-                // wait for PDS DTACK or PDS VPA
-                if(npdsDtack == 0) busState <= S3;
-                else if(npdsVpa == 0) busState <= S4;
-                else busState <= S2;
-            end
-            S3 : begin
-                // 68000 bus cycle state 6/7
-                // end 68000 bus cycle
-                // wait for cycleEndState == S2
-                if(cycleEndState == S2) busState <= S0;
-                else busState <= S3;
-            end
-            S4 : begin
-                // 6800 bus cycle state 1
-                // wait for E clock = 0
-                if(pdsClockE == 0) busState <= S5;
-                else busState <= S4;
-            end
-            S5 : begin
-                // 6800 bus cycle state 2
-                // wait for E clock = 1
-                if(pdsClockE == 1) busState <= S6;
-                else busState <= S5;
-            end
-            S6 : begin
-                // 6800 bus cycle state 3
-                // progress immediately
-                busState <= S7;
-            end
-            S7 : begin
-                // 6800 bus cycle state 4
-                // progress immediately
-                busState <= S8;
-            end
-            S8 : begin
-                // 6800 bus cycle state 5
-                // wait for cycleEndState == S2
-                if(cycleEndState == S2) busState <= S0;
-                else busState <= S8;
-            end
-            default: begin
-                // how did we end up here?
-                busState <= S0;
-            end
-        endcase
-    end
+// pds address strobe
+logic pdsASnINNER;
+always @(posedge pdsC8M or posedge cpuASn) begin
+    if(cpuASn) pdsASnINNER <= 1;
+    else if(pdsC8M && !cpuASn) pdsASnINNER <= 0;
+    else pdsASnINNER <= 1;
 end
-
-// 68030 bus termination state machine
-// drives CPU DSACKx signals
-// synchronous to CPU clock
-always @(posedge cpuClock or negedge npdsReset) begin
-    if(npdsReset == 0) termState <= S0;
-    else begin
-        case(termState)
-            S0 : begin
-                // idle, wait for busState
-                if(busState == S3 && pdsC8m == 1) termState <= S1;
-                else if(busState == S8 && pdsC8m == 1) termState <= S1;
-                else termState <= S0;
-            end
-            S1 : begin
-                // assert 68030 bus termination
-                // progress immediately
-                termState <= S2;
-            end
-            S2 : begin
-                // wait for busState
-                if(busState == S0) termState <= S0;
-                else termState <= S2;
-            end
-            default: begin
-                // how did we end up here?
-                termState <= S0;
-            end
-        endcase
-    end
-end
-
-// 68030 bus cycle end monitor
-// watches for 68030 ending a bus cycle (de-asserting AS)
-// synchronous to CPU clock
-always @(posedge cpuClock or negedge npdsReset) begin
-    if(npdsReset == 0) cycleEndState <= S0;
-    else begin
-        case(cycleEndState)
-            S0 : begin
-                if(busState != S0) cycleEndState <= S1;
-                else cycleEndState <= S0;
-            end
-            S1 : begin
-                if(ncpuAS == 1) cycleEndState <= S2;
-                else cycleEndState <= S1;
-            end
-            S2: begin
-                if(busState == S0) cycleEndState <= S0;
-                else cycleEndState <= S2;
-            end
-            default: begin
-                // how did get end up here?
-                cycleEndState <= S0;
-            end
-        endcase
-    end
-end
-
-// state machine for power on reset
-always @(posedge cpuClock or negedge npdsReset) begin
-    // sync state machine clocked by primary CPU clock with async reset
-    if(npdsReset == 1'b0) begin
-        resetgenState <= S0;
-    end else begin
-        case(resetgenState)
-            S0 : begin
-                // wait for deassertion of npdsReset
-                if(npdsReset == 1'b1) begin
-                    resetgenState <= S1;
-                end else begin
-                    // shouldn't actually end up here
-                    resetgenState <= S0;
-                end
-            end
-            S1 : begin
-                // wait for Bus Grant from SE
-                if(npdsBg == 1'b0) begin
-                    resetgenState <= S2;
-                end else begin
-                    resetgenState <= S1;
-                end
-            end
-            S2 : begin
-                // this is actually our idle state.
-                // stay here until the system resets again.
-                if(npdsReset == 1'b1) begin
-                    resetgenState <= S2;
-                end else begin
-                    resetgenState <= S0;
-                end
-            end
-            default: begin
-                // really shouldn't be here
-                resetgenState <= S0;
-            end
-        endcase
-    end
-end
-
-// combinatorial logic
-assign nUD = ~(~cpuA0 || cpuRnW);
-assign nLD = ~(cpuA0 || ~cpuSize0 || cpuSize1 || cpuRnW);
-
 always_comb begin
-    // CPU reset signals
-    if(resetgenState != S2) begin
-        ncpuReset <= 1'b0;
-        ncpuHalt <= 1'b0;
-    end else begin
-        ncpuReset <= 1'bz;
-        ncpuHalt <= 1'bz;
-    end
+    if(pdsBGn) pdsASnz <= 1'bZ;
+    else if(!pdsASnINNER) pdsASnz <= 0;
+    else pdsASnz <= 1'bZ;
+end
 
-    // bus request & grant
-    if(resetgenState == S0) begin
-        npdsBr <= 1'bz;
-    end else begin
-        npdsBr <= 1'b0;
-    end
-    if(resetgenState == S2) begin
-        npdsBGack <= 1'b0;
-    end else begin
-        npdsBGack <= 1'bz;
-    end
-
-    // buffer enable signals
-    if(ncpuBG == 1'b1) begin
-        if(nUD == 0 && npdsBg == 0) begin
-            nbufDhiEn <= 1'b0;
+// cpu bus termination (normal, 6800, & autovector)
+logic cpuDTACKnINNER;
+always @(posedge pdsC8M or posedge cpuASn) begin
+    if(cpuASn) cpuDTACKnINNER <= 1;
+    else if(pdsC8M && !pdsASnINNER && !pdsDTACKn) cpuDTACKnINNER <= 0;
+    else cpuDTACKnINNER <= 1;
+end
+always_comb begin
+    if(cpuFC == 3'h7) begin
+        // CPU space cycle
+        if(!cpuDTACK68nINNER) begin
+            // interrupt autovector
+            cpuDSACK0nz <= 1'bZ;
+            cpuDSACK1nz <= 1'bZ;
+            cpuAVECn <= 0;
         end else begin
-            nbufDhiEn <= 1'b1;
-        end
-        if(nLD == 0 && nUD == 1 && npdsBg == 0) begin
-            nbufDlo2En <= 1'b0;
-        end else begin
-            nbufDlo2En <= 1'b1;
-        end
-        if(nLD == 0 && nUD == 0 && npdsBg == 0) begin
-            nbufDlo1En <= 1'b0;
-        end else begin
-            nbufDlo1En <= 1'b1;
-        end
-        if(npdsBg <= 1'b0) begin
-            nbufAEn <= 1'b0;
-            nbufCEn <= 1'b0;
-        end else begin
-            nbufAEn <= 1'b1;
-            nbufCEn <= 1'b1;
+            // We shouldn't need anything else in CPU space
+            cpuDSACK0nz <= 1'bZ;
+            cpuDSACK1nz <= 1'bZ;
+            cpuAVECn <= 1;
         end
     end else begin
-        nbufDhiEn <= 1'b1;
-        nbufDlo2En <= 1'b1;
-        nbufDlo1En <= 1'b1;
-        nbufAEn <= 1'b1;
-        nbufCEn <= 1'b1;
-    end
-
-    // data buffer direction
-    bufDDir <= cpuRnW;
-
-    // CPU cache inhibit
-    if(cpuAddrHi >= 4'h6) begin
-        ncpuCiin <= 1'b0;
-    end else begin
-        ncpuCiin <= 1'bz;
-    end
-
-    // Upper/Lower data strobes
-    if(npdsBg == 1) begin
-        npdsUds <= 1'bZ;
-        npdsLds <= 1'bZ;
-    end else begin
-        if(cpuRnW == 1 && busState == S1) begin
-            npdsUds <= nUD;
-            npdsLds <= nLD;
-        end else if (busState == S2 || busState == S3 ||
-                     busState == S4 || busState == S5 ||
-                     busState == S6 || busState == S7 ||
-                     busState == S8) begin
-            npdsUds <= nUD;
-            npdsLds <= nLD;
+        // normal memory or I/O cycle
+        if(cpuAHI < 4'h4) begin
+            // 16-bit RAM access cycle
+            if(cpuDTACKnINNER) begin
+                cpuDSACK0nz <= 1'bZ;
+                cpuDSACK1nz <= 1'bZ;
+                cpuAVECn <= 1;
+            end else begin
+                cpuDSACK0nz <= 1'bZ;
+                cpuDSACK1nz <= 0;
+                cpuAVECn <= 1;
+            end
         end else begin
-            npdsUds <= 1;
-            npdsLds <= 1;
+            if(!cpuDTACKnINNER || !cpuDTACK68nINNER) begin
+                cpuDSACK0nz <= 0;
+                cpuDSACK1nz <= 1'bZ;
+                cpuAVECn <= 1;
+            end else begin
+                cpuDSACK0nz <= 1'bZ;
+                cpuDSACK1nz <= 1'bZ;
+                cpuAVECn <= 1;
+            end
         end
-    end
-
-    // Address strobe
-    if(npdsBg == 1) npdsAs <= 1'bZ;
-    else begin
-        if(busState != S0) npdsAs <= 0;
-        else npdsAs <= 1;
-    end
-
-    // 6800 bus VMA signal
-    if(npdsBg == 1) npdsVma <= 1'bZ;
-    else begin
-        if(busState == S5 || busState == S6 || 
-            busState == S7 || busState == S8) begin
-                npdsVma <= 0;
-        end else npdsVma <= 1;
-    end
-
-    // 68030 bus termination signals
-    // FPU will terminate on its own
-    if(termState == S1) begin
-        if(cpuAddrHi < 4'h5 && cpuFC < 3'h7) begin
-            // RAM/ROM access - 16-bit
-            ncpuDsack0 <= 1'bZ;
-            ncpuDsack1 <= 0;
-            ncpuAvec <= 1'bZ;
-            ncpuBerr <= 1'bZ;
-        end else if(cpuAddrHi >= 4'h5 && cpuFC < 3'h7) begin
-            // peripheral access - 8-bit
-            ncpuDsack0 <= 0;
-            ncpuDsack1 <= 1'bZ;
-            ncpuAvec <= 1'bZ;
-            ncpuBerr <= 1'bZ;
-        end else if(cpuFC == 3'h7) begin
-            // autovector interrupt
-            ncpuAvec <= 0;
-            ncpuDsack0 <= 1'bZ;
-            ncpuDsack1 <= 1'bZ;
-            ncpuBerr <= 1'bZ;
-        end else begin
-            // this is an odd case. how did it happen?
-            // may as well throw an error
-            ncpuBerr <= 0;
-            ncpuDsack0 <= 1'bZ;
-            ncpuDsack1 <= 1'bZ;
-            ncpuAvec <= 1'bZ;
-        end
-    end else begin
-        ncpuBerr <= 1'bZ;
-        ncpuDsack0 <= 1'bZ;
-        ncpuDsack1 <= 1'bZ;
-        ncpuAvec <= 1'bZ;
-    end
-
-    // FPU chip enable & presence detect
-    if(cpuAddrMid == 7'h11 && cpuFC == 3'h7 && ncpuAS) begin
-        nfpuCe <= 1'b0;
-        if(nfpuSense == 1'b1) begin
-            // pulled high means FPU missing. assert bus error
-            ncpuBerr <= 1'b0;
-        end else begin
-            ncpuBerr <= 1'bz;
-        end
-    end else begin
-        nfpuCe <= 1'b1;
-        ncpuBerr <= 1'bz;
     end
 end
+
+// pds E clock & 6800 bus
+reg [3:0] pdsEcount;
+reg pdsVMAnINNER, cpuDTACK68nINNER;
+always @(posedge pdsC8M) begin
+    if(pdsEcount == 9) pdsEcount <= 0;
+    else pdsEcount <= pdsEcount + 4'h1;
+end
+always @(posedge cpuClock or posedge pdsVPAn) begin
+    if(pdsVPAn) pdsVMAnINNER <= 1;
+    else if(!pdsVPAn && pdsEcount == 2) pdsVMAnINNER <= 0;
+end
+always @(posedge pdsC8M or posedge cpuASn) begin
+    if(cpuASn) cpuDTACK68nINNER <= 1;
+    else if(!pdsVMAnINNER && pdsEcount > 8) cpuDTACK68nINNER <= 0;
+end
+always_comb begin
+    if(pdsEcount < 6) pdsClockE <= 0;
+    else pdsClockE <= 1;
+
+    if(pdsVMAnINNER) pdsVMAnz <= 1'bZ;
+    else pdsVMAnz <= 0;
+end
+
+// pds data strobes
+reg pdsDSnINNER;
+wire pdsDSn2INNER;
+wire pdsLDSnINNER;
+wire pdsUDSnINNER;
+always @(posedge pdsC8M or posedge cpuASn) begin
+    if(cpuASn) pdsDSnINNER <= 1;
+    else if (pdsC8M && !pdsASnINNER) pdsDSnINNER <= 0;
+    else pdsDSnINNER <= 1;
+end
+always_comb begin
+    if(cpuRnW) pdsDSn2INNER <= pdsASnINNER;
+    else pdsDSn2INNER <= pdsDSnINNER;
+    
+    // Upper Data Strobe
+    if(pdsDSn2INNER) begin
+        pdsUDSnINNER <= 1;
+    end else begin
+        if(cpuRnW) begin
+            // read
+            pdsUDSnINNER <= 0;
+        end else begin
+            // write
+            if(cpuA0) pdsUDSnINNER <= 1;
+            else pdsUDSnINNER <= 0;
+        end
+    end
+
+    // Lower Data Strobe
+    if(pdsDSn2INNER) begin
+        pdsLDSnINNER <= 1;
+    end else begin
+        if(cpuRnW) begin
+            // read
+            pdsLDSnINNER <= 0;
+        end else begin
+            // write
+            if(cpuSIZE0 == 1 && cpuSIZE1 == 0 && cpuA0 == 0) pdsLDSnINNER <= 1;
+            else pdsLDSnINNER <= 0;
+        end
+    end
+
+    // Data Strobe outputs
+    if(pdsBGn) begin
+        pdsLDSnz <= 1'bZ;
+        pdsUDSnz <= 1'bZ;
+    end else begin
+        if(pdsLDSnINNER) pdsLDSnz <= 1'bZ;
+        else pdsLDSnz <= 0;
+        if(pdsUDSnINNER) pdsUDSnz <= 1'bZ;
+        else pdsUDSnz <= 0;
+    end
+end
+
+// fpu addressing
+wire fpuCEnINNER;
+always_comb begin
+    if(cpuAHI == 0 && cpuAMID == 7'h11 && cpuFC == 3'h7) fpuCEnINNER <= 0;
+    else fpuCEnINNER <= 1;
+
+    fpuCEn <= fpuCEnINNER;
+end
+
+// bus error
+always_comb begin
+    if(!fpuCEnINNER && !cpuASn && fpuSENSEn) cpuBERRn <= 0;
+    else if(!pdsBERRn) cpuBERRn <= 0;
+    else cpuBERRn <= 1;
+end
+
+// cache inhibit
+always_comb begin
+    if(cpuAHI >= 4'h4) cpuCIINn <= 0;
+    else cpuCIINn <= 1;
+end
+
+// cpu reset
+reg [1:0] resetState;
+always @(posedge cpuClock or negedge pdsRESETn) begin
+    if(!pdsRESETn) resetState <= 0;
+    else if(cpuClock) begin
+        case(resetState) 
+            0: begin
+                if(pdsRESETn) resetState <= 1;
+                else resetState <= 0;
+            end
+            1: begin
+                if(!pdsBGn) resetState <= 2;
+                else resetState <= 1;
+            end
+            2: begin
+                resetState <= 2;
+            end
+            default: begin
+                resetState <= 2;
+            end
+        endcase
+    end
+end
+always_comb begin
+    if(resetState == 2) begin
+        cpuHALTnz <= 1'bZ;
+        cpuRESETnz <= 1'bZ;
+        pdsBGACKn <= 0;
+    end else begin
+        cpuHALTnz <= 0;
+        cpuRESETnz <= 0;
+        pdsBGACKn <= 1;
+    end
+    pdsBRn <= 0;
+end
+
+// bus buffer controls
+assign bufACEn = cpuASn;
+assign bufCCEn = pdsBGn;
+assign bufDDIR = cpuRnW;
+
+wire siz, siza;
+assign siz = cpuSIZE0 & ~cpuSIZE1;
+assign bufDLO1CEn = siz | cpuDSn;
+assign siza = siz & cpuA0;
+assign bufDLO2CEn = ~siza | cpuDSn;
+assign bufDHICEn = siza | cpuDSn;
+
 
 endmodule
