@@ -38,6 +38,7 @@ module paste (
     inout wire          pdsVMAnz,           // PDS Valid Memory Addr signal
     input wire          pdsVPAn,            // PDS Valid Peripheral Addr signal
     input wire          pdsBERRn,           // PDS Bus Error signal
+    input wire          pdsPMCYCn,          // PDS Memory Cycle signal
     input wire          pdsC8M,             // PDS 8MHz System Clock signal
     output wire         pdsClockE,          // PDS 800kHz 6800 bus E clock
     output wire         bufDHICEn,          // Data buffer CPU[31:24] <=> PDS[15:8]
@@ -50,11 +51,36 @@ module paste (
     output wire         fpuCEn              // FPU Chip Select signal
 );
 
+// SE memory cycle syncronization
+// the SE bus is fully synchronous and uses the PMCYCn singal to indicate when
+// it is loading video data from memory and to indicate the beginning of a
+// 68000 cpu cycle. Asserting PDS ASn during the S3-S4 transition will cause
+// the memory RAS/CAS generator to glitch, and so should be avoided. 
+logic [1:0] cycCount;
+always @(posedge pdsC8M or posedge pdsPMCYCn) begin
+    if(pdsPMCYCn) cycCount <= 0;
+    else if(pdsC8M) begin
+        cycCount <= cycCount + 2'h1;
+    end
+end
+
 // pds address strobe
+// For ROM & peripheral accesses, PDS ASn can fall at any time, but for memory
+// accesses, PDS ASn must be synchronized with the SE state machine
+// For memory accesses, we need to check both the current address and the state
+// of cycCount to meet timing requirements
 logic pdsASnINNER;
 always @(posedge pdsC8M or posedge cpuASn) begin
     if(cpuASn) pdsASnINNER <= 1;
-    else if(pdsC8M && !cpuASn) pdsASnINNER <= 0;
+    else if(cpuAHI < 4'h4) begin
+        // this is a memory access cycle, we need to pay special attention to
+        // synchronization with the SE state machine
+        if(!pdsPMCYCn && cycCount != 1) pdsASnINNER <= 0;
+        else if(!pdsASnINNER && !cpuASn) pdsASnINNER <= 0; // keep low if already low as long as CPU holds low
+        else pdsASnINNER <= 1;
+        // I'm not entirely sure this is going to work, given internal timing
+        // of the CPLD, signal propagation times, etc. 
+    end else if(pdsC8M && !cpuASn) pdsASnINNER <= 0;
     else pdsASnINNER <= 1;
 end
 always_comb begin
@@ -70,43 +96,29 @@ always @(posedge pdsC8M or posedge cpuASn) begin
     else if(pdsC8M && !pdsASnINNER && !pdsDTACKn) cpuDTACKnINNER <= 0;
     else cpuDTACKnINNER <= 1;
 end
+// since the 68000 had a 16-bit bus and did not support
+// dynamic bus sizing the way the 68030 did, all our 
+// normal bus cycles will be terminated as 16-bit.
+// The exception is interrupts, where we'll terminate
+// with AVEC instead of DSACKx
 always_comb begin
+    cpuDSACK0nz <= 1'bZ;
     if(cpuFC == 3'h7) begin
-        // CPU space cycle
+        // interrupt autovector
         if(!cpuDTACK68nINNER) begin
-            // interrupt autovector
-            cpuDSACK0nz <= 1'bZ;
             cpuDSACK1nz <= 1'bZ;
             cpuAVECn <= 0;
         end else begin
-            // We shouldn't need anything else in CPU space
-            cpuDSACK0nz <= 1'bZ;
             cpuDSACK1nz <= 1'bZ;
             cpuAVECn <= 1;
         end
     end else begin
-        // normal memory or I/O cycle
-        if(cpuAHI < 4'h4) begin
-            // 16-bit RAM access cycle
-            if(cpuDTACKnINNER) begin
-                cpuDSACK0nz <= 1'bZ;
-                cpuDSACK1nz <= 1'bZ;
-                cpuAVECn <= 1;
-            end else begin
-                cpuDSACK0nz <= 1'bZ;
-                cpuDSACK1nz <= 0;
-                cpuAVECn <= 1;
-            end
+        if(!cpuDTACKnINNER || !cpuDTACK68nINNER) begin
+            cpuDSACK1nz <= 0;
+            cpuAVECn <= 1;
         end else begin
-            if(!cpuDTACKnINNER || !cpuDTACK68nINNER) begin
-                cpuDSACK0nz <= 0;
-                cpuDSACK1nz <= 1'bZ;
-                cpuAVECn <= 1;
-            end else begin
-                cpuDSACK0nz <= 1'bZ;
-                cpuDSACK1nz <= 1'bZ;
-                cpuAVECn <= 1;
-            end
+            cpuDSACK1nz <= 1'bZ;
+            cpuAVECn <= 1;
         end
     end
 end
@@ -139,12 +151,27 @@ reg pdsDSnINNER;
 wire pdsDSn2INNER;
 wire pdsLDSnINNER;
 wire pdsUDSnINNER;
+wire pdsUPPERn, pdsLOWERn;
 always @(posedge pdsC8M or posedge cpuASn) begin
     if(cpuASn) pdsDSnINNER <= 1;
     else if (pdsC8M && !pdsASnINNER) pdsDSnINNER <= 0;
     else pdsDSnINNER <= 1;
 end
+
 always_comb begin
+    // upper strobe
+    if(cpuRnW) pdsUPPERn <= 0;
+    else begin
+        if(cpuA0) pdsUPPERn <= 1;
+        else pdsUPPERn <= 0;
+    end
+    // lower strobe
+    if(cpuRnW) pdsLOWERn <= 0;
+    else begin
+        if(cpuSIZE0 == 1 && cpuSIZE1 == 0 && cpuA0 == 0) pdsLOWERn <= 1;
+        else pdsLOWERn <= 0;
+    end
+
     if(cpuRnW) pdsDSn2INNER <= pdsASnINNER;
     else pdsDSn2INNER <= pdsDSnINNER;
     
@@ -152,28 +179,14 @@ always_comb begin
     if(pdsDSn2INNER) begin
         pdsUDSnINNER <= 1;
     end else begin
-        if(cpuRnW) begin
-            // read
-            pdsUDSnINNER <= 0;
-        end else begin
-            // write
-            if(cpuA0) pdsUDSnINNER <= 1;
-            else pdsUDSnINNER <= 0;
-        end
+        pdsUDSnINNER <= pdsUPPERn;
     end
 
     // Lower Data Strobe
     if(pdsDSn2INNER) begin
         pdsLDSnINNER <= 1;
     end else begin
-        if(cpuRnW) begin
-            // read
-            pdsLDSnINNER <= 0;
-        end else begin
-            // write
-            if(cpuSIZE0 == 1 && cpuSIZE1 == 0 && cpuA0 == 0) pdsLDSnINNER <= 1;
-            else pdsLDSnINNER <= 0;
-        end
+        pdsLDSnINNER <= pdsLOWERn;
     end
 
     // Data Strobe outputs
@@ -247,16 +260,15 @@ always_comb begin
 end
 
 // bus buffer controls
-assign bufACEn = cpuASn;
-assign bufCCEn = pdsBGn;
 assign bufDDIR = cpuRnW;
+wire bufCEn;
+assign bufCEn = ~(cpuBGn & ~pdsBGn);
+assign bufACEn = bufCEn;
+assign bufCCEn = bufCEn;
+assign bufDHICEn = bufCEn;
+assign bufDLO1CEn = bufCEn;
 
-wire siz, siza;
-assign siz = cpuSIZE0 & ~cpuSIZE1;
-assign bufDLO1CEn = siz | cpuDSn;
-assign siza = siz & cpuA0;
-assign bufDLO2CEn = ~siza | cpuDSn;
-assign bufDHICEn = siza | cpuDSn;
-
+// it turns out we don't actually need the Lo2 buffer
+assign bufDLO2CEn = 1;
 
 endmodule
